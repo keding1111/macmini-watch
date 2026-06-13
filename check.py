@@ -46,6 +46,7 @@ def check_apple_refurb() -> list[dict]:
     html = fetch(url)
     if not html:
         return []
+    
     pro_count = len(re.findall(r"iPhone 15 Pro", html, re.IGNORECASE))
     prices = sorted({p for p in re.findall(r"\$\s*([0-9][0-9,]{2,4}\.\d{2})", html)})
     print(
@@ -53,14 +54,20 @@ def check_apple_refurb() -> list[dict]:
         f"distinct prices: {prices[:15]}{'...' if len(prices) > 15 else ''}",
         file=sys.stderr,
     )
+    
     hits = []
     pattern = re.compile(
         r"(Refurbished\s+iPhone\s+15\s+Pro(?:\s+Max)?\s+[^<]{0,100}?(?:128GB|256GB)[^<]{0,100}?)"
         r"[\s\S]{0,3000}?\$\s*([0-9][0-9,]{2,4})\.\d{2}",
         re.IGNORECASE,
     )
+    
     seen = set()
-    if "512GB" in title or "1TB" in title:
+    for m in pattern.finditer(html):
+        title = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", m.group(1))).strip()
+        price = int(m.group(2).replace(",", ""))
+        
+        if "512GB" in title or "1TB" in title:
             continue
             
         key = (title, price)
