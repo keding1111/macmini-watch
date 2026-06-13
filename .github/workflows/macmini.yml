@@ -1,12 +1,12 @@
-name: Mac Mini stock watch
+name: iPhone 15 Pro stock watch
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       test_ping:
-        description: "Send a Slack test ping and exit (no real check)"
+        description: "Send a WeCom test ping and exit (no real check)"
         type: boolean
         default: false
 
@@ -17,7 +17,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 concurrency:
-  group: macmini-watch
+  group: iphone-watch
   cancel-in-progress: false
 
 jobs:
@@ -32,10 +32,12 @@ jobs:
 
       - name: Run check
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_MENTION_USER_IDS: ${{ secrets.SLACK_MENTION_USER_IDS }}
+
+          WECOM_WEBHOOK_URL: ${{ secrets.WECOM_WEBHOOK_URL }}
+
           TEST_PING: ${{ inputs.test_ping == true && '1' || '0' }}
-          PRICE_CAP: "600"
+
+          PRICE_CAP: "860"
         run: python check.py
 
       - name: Commit state if changed
