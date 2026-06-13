@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Polls Apple's Certified Refurbished store for an M4 Mac mini at $600 or less.
+Polls Apple's Certified Refurbished store iPhone 15 Pro (128G/256G) & 15 Pro Max (256G) at $860 or less.
 On a new hit, posts to Slack via webhook. Dedupes via state.json.
 """
 
@@ -12,7 +12,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-PRICE_CAP = int(os.environ.get("PRICE_CAP", "600"))
+PRICE_CAP = int(os.environ.get("PRICE_CAP", "860"))
 STATE_PATH = Path("state.json")
 SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "").strip()
 # Optional: Slack user ID(s) to @-mention on real hits. Comma-separated for
@@ -44,32 +44,32 @@ def fetch(url: str) -> str:
 
 
 def check_apple_refurb() -> list[dict]:
-    url = "https://www.apple.com/shop/refurbished/mac/mac-mini"
+    url = "https://www.apple.com/shop/refurbished/iphone/iphone-15-pro-iphone-15-pro-max"
     html = fetch(url)
     if not html:
         return []
-    mac_mini_count = len(re.findall(r"Mac mini", html, re.IGNORECASE))
-    m4_count = len(re.findall(r"\bM4\b", html))
+    pro_count = len(re.findall(r"iPhone 15 Pro", html, re.IGNORECASE))
     prices = sorted({p for p in re.findall(r"\$\s*([0-9][0-9,]{2,4}\.\d{2})", html)})
     print(
-        f"[apple] 'Mac mini' x{mac_mini_count}, 'M4' x{m4_count}, "
+        f"[apple] 'iPhone 15 Pro/Max' x{pro_count}, "
         f"distinct prices: {prices[:15]}{'...' if len(prices) > 15 else ''}",
         file=sys.stderr,
     )
     hits = []
     pattern = re.compile(
-        r"(Refurbished[^<]{0,200}Mac mini[^<]{0,200}M4[^<]{0,400}?)"
+        r"(Refurbished\s+iPhone\s+15\s+Pro(?:\s+Max)?\s+[^<]{0,100}?(?:128GB|256GB)[^<]{0,100}?)"
         r"[\s\S]{0,3000}?\$\s*([0-9][0-9,]{2,4})\.\d{2}",
         re.IGNORECASE,
     )
     seen = set()
-    for m in pattern.finditer(html):
-        title = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", m.group(1))).strip()
-        price = int(m.group(2).replace(",", ""))
+    if "512GB" in title or "1TB" in title:
+            continue
+            
         key = (title, price)
         if key in seen:
             continue
         seen.add(key)
+        
         if price <= PRICE_CAP:
             hits.append(
                 {
@@ -97,7 +97,7 @@ def post_slack(hit: dict) -> None:
         if mentions:
             mentions += " "
     text = (
-        f"{mentions}:rotating_light: Mac mini ${PRICE_CAP} hit — {hit['retailer']}\n"
+        f"{mentions}:rotating_light: iPhone 15 Pro 📱 ${PRICE_CAP} hit — {hit['retailer']}\n"
         f"{hit['variant']} at ${hit['price']}\n"
         f"{hit['url']}"
     )
